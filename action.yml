@@ -1,6 +1,6 @@
-name: Portainer Stack Redeploy
+name: Portainer Git Stack Redeploy
 author: Dzianis Nikifaraŭ
-description: Action for request to Portainer API for redeploy stack with pull latest images
+description: Action for request to Portainer API for redeploy stack with pull latest images from GitHub
 
 inputs:
   portainerUrl:
@@ -9,14 +9,18 @@ inputs:
   accessToken:
     description: 'Portainer access token'
     required: true
-  stackId:
+  stackName:
     description: 'Stack ID'
     required: true
-  endpointId:
-    description: 'Endpoint ID. Needed if used remote agent'
-    required: false
+  branch:
+    description: 'Branch'
+    required: true
     default: ''
 
 runs:
-  using: 'node16'
-  main: 'index.js'
+  using: 'node20'
+  main: 'dist/index.js'
+
+branding:
+  icon: 'refresh-ccw'
+  color: 'blue'
