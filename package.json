@@ -1,6 +1,6 @@
 {
   "name": "portainer-git-stack-redeploy-action",
-  "version": "1.5.0",
+  "version": "1.5.2",
   "description": "Action for request to Portainer API for redeploy stack with pull latest images from GitHub",
   "main": "dist/index.js",
   "scripts": {

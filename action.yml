@@ -12,10 +12,6 @@ inputs:
   stackName:
     description: 'Stack ID'
     required: true
-  branch:
-    description: 'Branch'
-    required: true
-    default: ''
 
 runs:
   using: 'node20'

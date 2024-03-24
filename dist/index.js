@@ -2822,7 +2822,7 @@ const core = __nccwpck_require__(186)
 let portainerUrl = core.getInput("portainerUrl")
 const accessToken = core.getInput("accessToken")
 const stackName = core.getInput("stackName")
-const branch = core.getInput("branch")
+// const branch = core.getInput("branch")
 
 let client
 
@@ -2842,8 +2842,6 @@ if (portainerUrl.substring(portainerUrl.length - 1) === "/") {
 
 core.setSecret(portainerUrl)
 core.setSecret(accessToken)
-core.setSecret(stackName)
-core.setSecret(branch)
 
 let stackId = 0;
 let endpoint = 0;
@@ -2912,7 +2910,7 @@ const doRedeploy = (attempt = 1) => {
     pullImage: true,
     RepositoryAuthentication: false,
     RepositoryPassword: "",
-    RepositoryReferenceName: branch,
+    RepositoryReferenceName: null, //branch,
     RepositoryUsername: "",
     env: [],
     prune: true,
@@ -2953,7 +2951,12 @@ const doRedeploy = (attempt = 1) => {
 
           attempt++
 
-          return doRedeploy(attempt)
+          setTimeout(() => {
+            console.log("Retrying now")
+            doRedeploy(attempt)
+          }, 5000)
+
+          return
         } else {
           console.log("Reached max attempts!")
           core.setFailed('Error - Retried and retried and couldnt succeed')
@@ -3017,11 +3020,17 @@ const doStartStop = (stop, callback) => {
           console.log(`Attempt #${attempt} failed.`)
   
           if (attempt < 5) {
-            console.log("Retrying!")
+            console.log("Waiting to retry.. ")
   
             attempt++
-  
-            return callAPI(callback, attempt)
+
+            setTimeout(() => {
+              console.log("Retrying now")
+
+              callAPI(callback, attempt)
+            }, 5000)
+
+            return 
           } else {
             console.log("Reached max attempts!")
             core.setFailed('Error - Retried and retried and couldnt succeed')
