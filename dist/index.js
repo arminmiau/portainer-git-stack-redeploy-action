@@ -2881,11 +2881,11 @@ const getStackId = (callback) => {
         for (i in jsonData) {
           const stack = jsonData[i]
           
-          stackId = stack.Id
-          endpoint = stack.EndpointId
-
           if (stack.Name == stackName) {
             console.log(`Identified stackId: ${stackId} and endpoint: ${endpoint}`)
+            
+            stackId = stack.Id
+            endpoint = stack.EndpointId
 
             callback(true)
           }
