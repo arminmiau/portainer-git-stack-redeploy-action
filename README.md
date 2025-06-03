@@ -12,6 +12,10 @@ This action allows you to update the stack with pull new images if you can't use
 
 **Required** Token for API requests, can be created on the page https://example.com:9443/#!/account/tokens/new
 
+### `stackName`
+
+**Required** Name of stack to be updated. The action will retrieve the stack id and endpoint id itself.
+
 ### `useAuthentication`
 
 **Required** If the git stack is configured with authentication
