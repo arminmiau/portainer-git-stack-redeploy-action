@@ -3,6 +3,7 @@ const core = require("@actions/core");
 let portainerUrl = core.getInput("portainerUrl");
 const accessToken = core.getInput("accessToken");
 const stackName = core.getInput("stackName");
+const useAuthentication = core.getInput("useAuthentication");
 
 let client;
 
@@ -27,7 +28,6 @@ let stackId = 0;
 let endpoint = 0;
 
 const getStackId = (callback) => {
-  // const url = `${portainerUrl}/api/endpoints/${endpointId}`
   const url = `${portainerUrl}/api/stacks`;
   let data = "";
 
@@ -54,20 +54,17 @@ const getStackId = (callback) => {
 
       res
         .on("end", () => {
-          //console.log("Received response", res.statusCode, data)
 
           const jsonData = JSON.parse(data);
 
           if (Array.isArray(jsonData)) {
-            // console.log(`Successfully redeployed ${jsonData.Name}!`)
-            // console.log("Got data back!", jsonData)
 
             for (i in jsonData) {
               const stack = jsonData[i];
 
-              if (stack.Name == stackName) {
+              if (stack.Name === stackName) {
                 console.log(
-                  `Identified stackId: ${stackId} and endpoint: ${endpoint}`
+                  `Identified stackId: ${stack.Id} and endpoint: ${stack.EndpointId}`
                 );
 
                 stackId = stack.Id;
@@ -94,9 +91,9 @@ const doRedeploy = (attempt = 1) => {
 
   const postData = JSON.stringify({
     pullImage: true,
-    RepositoryAuthentication: false,
+    RepositoryAuthentication: useAuthentication,
     RepositoryPassword: "",
-    RepositoryReferenceName: null, //branch,
+    RepositoryReferenceName: "",
     RepositoryUsername: "",
     env: [],
     prune: true,
@@ -123,16 +120,12 @@ const doRedeploy = (attempt = 1) => {
         process.exit(2);
       }
 
-      // A chunk of data has been received.
       res.on("data", (chunk) => {
         data += chunk;
       });
 
-      // The whole response has been received. Print out the result.
       res
         .on("end", () => {
-          //console.log("Received response", res.statusCode, data)
-
           if (res.statusCode == 500) {
             console.log(`Attempt #${attempt} failed.`);
 
@@ -173,7 +166,6 @@ const doRedeploy = (attempt = 1) => {
 
 getStackId((success) => {
   if (success) {
-    console.log("We got stack id and endpoint", stackId, endpoint);
     doRedeploy();
   } else {
     console.log("Failed to get stack id and endpoint");

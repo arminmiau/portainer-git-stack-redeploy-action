@@ -12,6 +12,9 @@ inputs:
   stackName:
     description: 'Stack ID'
     required: true
+  useAuthentication:
+    description: 'Use Authentication'
+    required: true
 
 runs:
   using: 'node20'
