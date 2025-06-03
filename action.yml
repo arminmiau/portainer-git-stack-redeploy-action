@@ -1,6 +1,6 @@
-name: Portainer Git Stack Redeploy
-author: Dzianis Nikifaraŭ
-description: Action for request to Portainer API for redeploy stack with pull latest images from GitHub
+name: Redeploy Portainer Git Stack
+author: Armin Bade
+description: Action to redeploy a git stack on an portainer instance
 
 inputs:
   portainerUrl:
