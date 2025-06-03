@@ -1,92 +1,98 @@
-const core = require("@actions/core")
+const core = require("@actions/core");
 
-let portainerUrl = core.getInput("portainerUrl")
-const accessToken = core.getInput("accessToken")
-const stackName = core.getInput("stackName")
+let portainerUrl = core.getInput("portainerUrl");
+const accessToken = core.getInput("accessToken");
+const stackName = core.getInput("stackName");
 // const branch = core.getInput("branch")
 
-let client
+let client;
 
 if (portainerUrl.includes("http:")) {
-  client = require("http")
+  client = require("http");
 } else {
-  client = require("https")
+  client = require("https");
 
   if (!portainerUrl.includes("https:")) {
-    portainerUrl = `https://${portainerUrl}`
+    portainerUrl = `https://${portainerUrl}`;
   }
 }
 
 if (portainerUrl.substring(portainerUrl.length - 1) === "/") {
-  portainerUrl = portainerUrl.substring(0, portainerUrl.length - 1)
+  portainerUrl = portainerUrl.substring(0, portainerUrl.length - 1);
 }
 
-core.setSecret(portainerUrl)
-core.setSecret(accessToken)
+core.setSecret(portainerUrl);
+core.setSecret(accessToken);
 
 let stackId = 0;
 let endpoint = 0;
 
 const getStackId = (callback) => {
   // const url = `${portainerUrl}/api/endpoints/${endpointId}`
-  const url = `${portainerUrl}/api/stacks`
-  let data = '';
+  const url = `${portainerUrl}/api/stacks`;
+  let data = "";
 
-  console.log(`Getting stack id for stack: ${stackName}`)
+  console.log(`Getting stack id for stack: ${stackName}`);
 
-  const req = client.request(url, {
-    method: "GET",
-    headers: {
-      "X-API-Key": accessToken,
-    }
-  }, (res) => {
-    if (res.statusCode !== 200) {
-      callback(false)
-      core.setFailed('HTTP ' + res.statusCode + ' - ' + res.statusMessage)
-      process.exit(2)
-    }
-
-    res.on('data', (chunk) => {
-      data += chunk;
-    });
-
-    res.on('end', () => {    
-      //console.log("Received response", res.statusCode, data)
-
-      const jsonData = JSON.parse(data)
-
-      if (Array.isArray(jsonData)) {
-        // console.log(`Successfully redeployed ${jsonData.Name}!`)
-        // console.log("Got data back!", jsonData)
-
-        for (i in jsonData) {
-          const stack = jsonData[i]
-          
-          if (stack.Name == stackName) {
-            console.log(`Identified stackId: ${stackId} and endpoint: ${endpoint}`)
-            
-            stackId = stack.Id
-            endpoint = stack.EndpointId
-
-            callback(true)
-          }
-        }
+  const req = client.request(
+    url,
+    {
+      method: "GET",
+      headers: {
+        "X-API-Key": accessToken,
+      },
+    },
+    (res) => {
+      if (res.statusCode !== 200) {
+        callback(false);
+        core.setFailed("HTTP " + res.statusCode + " - " + res.statusMessage);
+        process.exit(2);
       }
-    })
-    .on("error", (error) => {
-      callback(false)
-      core.setFailed('Error - ' + error.message)
-      process.exit(3)
-    })
-  })
 
-  req.end()
-}
+      res.on("data", (chunk) => {
+        data += chunk;
+      });
+
+      res
+        .on("end", () => {
+          //console.log("Received response", res.statusCode, data)
+
+          const jsonData = JSON.parse(data);
+
+          if (Array.isArray(jsonData)) {
+            // console.log(`Successfully redeployed ${jsonData.Name}!`)
+            // console.log("Got data back!", jsonData)
+
+            for (i in jsonData) {
+              const stack = jsonData[i];
+
+              if (stack.Name == stackName) {
+                console.log(
+                  `Identified stackId: ${stackId} and endpoint: ${endpoint}`
+                );
+
+                stackId = stack.Id;
+                endpoint = stack.EndpointId;
+
+                callback(true);
+              }
+            }
+          }
+        })
+        .on("error", (error) => {
+          callback(false);
+          core.setFailed("Error - " + error.message);
+          process.exit(3);
+        });
+    }
+  );
+
+  req.end();
+};
 
 const doRedeploy = (attempt = 1) => {
-  let data = '';
+  let data = "";
 
-  
   const postData = JSON.stringify({
     pullImage: true,
     RepositoryAuthentication: false,
@@ -95,167 +101,82 @@ const doRedeploy = (attempt = 1) => {
     RepositoryUsername: "",
     env: [],
     prune: true,
-  })
-
-  const url = `${portainerUrl}/api/stacks/${stackId}/git/redeploy?endpointId=${endpoint}`
-
-  console.log("Hitting URL", url)
-  console.log("With data:", postData)
-
-  const req = client.request(url, {
-    method: "PUT",
-    headers: {
-      "X-API-Key": accessToken,
-      "Content-Type": "application/json",
-      "Content-Length": Buffer.byteLength(postData)
-    }
-  }, (res) => {
-    if (res.statusCode !== 200 && res.statusCode !== 500) {
-      core.setFailed('HTTP ' + res.statusCode + ' - ' + res.statusMessage)
-      process.exit(2)
-    }
-
-    // A chunk of data has been received.
-    res.on('data', (chunk) => {
-      data += chunk;
-    });
-
-    // The whole response has been received. Print out the result.
-    res.on('end', () => {    
-      //console.log("Received response", res.statusCode, data)
-
-      if (res.statusCode == 500) {
-        console.log(`Attempt #${attempt} failed.`)
-
-        if (attempt < 3) {
-          console.log("Retrying!")
-
-          attempt++
-
-          setTimeout(() => {
-            console.log("Retrying now")
-            doRedeploy(attempt)
-          }, 5000)
-
-          return
-        } else {
-          console.log("Reached max attempts!")
-          core.setFailed('Error - Retried and retried and couldnt succeed')
-          process.exit(3)
-        }
-      }
-
-      const jsonData = JSON.parse(data)
-
-      if (jsonData.Name) {
-        console.log(`Successfully redeployed ${jsonData.Name}!`)
-      }
-    })
-    .on("error", (error) => {
-      core.setFailed('Error - ' + error.message)
-      process.exit(3)
-    })
   });
 
-  req.write(postData)
-  req.end()
-}
+  const url = `${portainerUrl}/api/stacks/${stackId}/git/redeploy?endpointId=${endpoint}`;
 
-const doStartStop = (stop, callback) => {
-  const callAPI = (callback, attempt = 1) => {
-    const payload = JSON.stringify({
-      endpointId: endpoint,
-      id: stackId
-    })
+  console.log("Hitting URL", url);
+  console.log("With data:", postData);
 
-    let data = '';
-    const action = stop ? 'stop' : 'start'
-    const url = `${portainerUrl}/api/stacks/${stackId}/${action}?endpointId=${endpoint}`
-  
-    console.log("Hitting URL", url)
-    console.log("With data:", payload)
-  
-    const req = client.request(url, {
-      method: "POST",
+  const req = client.request(
+    url,
+    {
+      method: "PUT",
       headers: {
         "X-API-Key": accessToken,
         "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(payload)
+        "Content-Length": Buffer.byteLength(postData),
+      },
+    },
+    (res) => {
+      if (res.statusCode !== 200 && res.statusCode !== 500) {
+        core.setFailed("HTTP " + res.statusCode + " - " + res.statusMessage);
+        process.exit(2);
       }
-    }, (res) => {
-      if (res.statusCode !== 200 && res.statusCode !== 500 && res.statusCode !== 400) {
-        core.setFailed('HTTP ' + res.statusCode + ' - ' + res.statusMessage)
-        process.exit(2)
-      }
-  
+
       // A chunk of data has been received.
-      res.on('data', (chunk) => {
+      res.on("data", (chunk) => {
         data += chunk;
       });
-  
+
       // The whole response has been received. Print out the result.
-      res.on('end', () => {    
-        //console.log("Received response", res.statusCode, data)
-  
-        if (res.statusCode == 500) {
-          console.log(`Attempt #${attempt} failed.`)
-  
-          if (attempt < 5) {
-            console.log("Waiting to retry.. ")
-  
-            attempt++
+      res
+        .on("end", () => {
+          //console.log("Received response", res.statusCode, data)
 
-            setTimeout(() => {
-              console.log("Retrying now")
+          if (res.statusCode == 500) {
+            console.log(`Attempt #${attempt} failed.`);
 
-              callAPI(callback, attempt)
-            }, 5000)
+            if (attempt < 3) {
+              console.log("Retrying!");
 
-            return 
-          } else {
-            console.log("Reached max attempts!")
-            core.setFailed('Error - Retried and retried and couldnt succeed')
-            process.exit(3)
+              attempt++;
+
+              setTimeout(() => {
+                console.log("Retrying now");
+                doRedeploy(attempt);
+              }, 5000);
+
+              return;
+            } else {
+              console.log("Reached max attempts!");
+              core.setFailed("Error - Retried and retried and couldnt succeed");
+              process.exit(3);
+            }
           }
-        }
-  
-        const jsonData = JSON.parse(data)
-  
-        if (jsonData) {
-          callback(jsonData)
-        } else {
-          core.setFailed('Error - Failed to parse JSON:'  + data)
-          process.exit(3)
-        }
-      })
-      .on("error", (error) => {
-        core.setFailed('Error - ' + error.message)
-        process.exit(3)
-      })
-    });
-  
-    req.write(payload)
-    req.end()
-  }
 
-  callAPI(callback)
-}
+          const jsonData = JSON.parse(data);
+
+          if (jsonData.Name) {
+            console.log(`Successfully redeployed ${jsonData.Name}!`);
+          }
+        })
+        .on("error", (error) => {
+          core.setFailed("Error - " + error.message);
+          process.exit(3);
+        });
+    }
+  );
+
+  req.write(postData);
+  req.end();
+};
 
 getStackId((success) => {
   if (success) {
-    console.log("We got stack id and endpoint", stackId, endpoint)
-
-    doStartStop(true, () => {
-      console.log("Stack has been stopped")
-
-      doStartStop(false, () => {
-        console.log("Stack has been started again")
-      })
-    })
-
-    
-    //doRedeploy()
+    console.log("We got stack id and endpoint", stackId, endpoint);
+    doRedeploy();
   } else {
-    console.log("Failed to get stack id and endpoint")
+    console.log("Failed to get stack id and endpoint");
   }
-})
+});
