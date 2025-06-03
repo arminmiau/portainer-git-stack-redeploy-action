@@ -23,10 +23,9 @@ ID of endpoint (environment). Required if your stack is not in local environment
 ## Example usage
 
 ```yaml
-uses:  manicmade/portainer-git-stack-redeploy-action@v1.5.3
+uses:  arminmiau/portainer-git-stack-redeploy-action@v1.0
 with:
   portainerUrl: 'https://example.com:9443'
   accessToken: 'ptr_XXXyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'
   stackName: 'company-stack'
-  branch: 'refs/heads/master'
 ```

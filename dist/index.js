@@ -27562,7 +27562,6 @@ const core = __nccwpck_require__(1078);
 let portainerUrl = core.getInput("portainerUrl");
 const accessToken = core.getInput("accessToken");
 const stackName = core.getInput("stackName");
-// const branch = core.getInput("branch")
 
 let client;
 

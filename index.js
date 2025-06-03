@@ -3,7 +3,6 @@ const core = require("@actions/core");
 let portainerUrl = core.getInput("portainerUrl");
 const accessToken = core.getInput("accessToken");
 const stackName = core.getInput("stackName");
-// const branch = core.getInput("branch")
 
 let client;
 
