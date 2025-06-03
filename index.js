@@ -3,7 +3,8 @@ const core = require("@actions/core");
 let portainerUrl = core.getInput("portainerUrl");
 const accessToken = core.getInput("accessToken");
 const stackName = core.getInput("stackName");
-const useAuthentication = core.getInput("useAuthentication");
+const useAuthenticationInput = core.getInput("useAuthentication");
+const useAuthentication = useAuthenticationInput.toLowerCase() === 'true';
 
 let client;
 
